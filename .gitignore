@@ -1,0 +1,23 @@
+# Node.js dependencies
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Build artifacts
+dist/
+*.log
+*.tmp
+*.cache
+.nyc_output/
+coverage/
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Editor and OS
+.idea/
+.vscode/
+*.swp
