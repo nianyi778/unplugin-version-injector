@@ -1,11 +1,14 @@
 {
     "name": "unplugin-version-injector",
-    "version": "1.0.0",
-    "author": {
-        "name": "nianyi778",
-        "email": "nianyi778@gmail.com"
-    },
+    "version": "1.0.3",
+    "author": "Nian Yi <nianyi778@gmail.com>",
+    "license": "MIT",
     "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nianyi778/unplugin-version-injector.git"
+    },
+    "keywords": ["unplugin", "version", "injector", "webpack", "vite", "rollup"],
     "main": "./dist/cjs/index.js",  
     "module": "./dist/esm/index.js", 
     "exports": {
@@ -19,7 +22,7 @@
         "build:esm": "tsc --module ESNext --outDir dist/esm",
         "build:cjs": "tsc --module CommonJS --outDir dist/cjs",
         "build": "npm run clean && npm run build:esm && npm run build:cjs",
-        "publish": "npm run build && npm publish"
+        "prepublishOnly": "npm run build"
     },
     "dependencies": {
         "unplugin": "^1.0.0"
@@ -30,5 +33,9 @@
         "vite": "^4",
         "rollup": "^3"
     },
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": ["dist","README.md","README.zh-CN.md"],    
     "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
 }
