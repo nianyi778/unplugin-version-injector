@@ -1,23 +1,33 @@
-import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+
+function getDirname(): string {
+  try {
+    // @ts-ignore – only works in ESM
+    if (typeof import.meta !== 'undefined' && import.meta.url) {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {
+    // ignore
+  }
+
+  // fallback for CJS
+  return __dirname;
+}
 
 export function getPackageVersion(): string {
   try {
-    // 获取当前文件路径（支持 esm）
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
+    let dir = getDirname();
 
-    // 向上寻找 package.json
-    let dir = __dirname;
     while (dir !== path.parse(dir).root) {
       const pkgPath = path.join(dir, 'package.json');
       if (fs.existsSync(pkgPath)) {
         const content = fs.readFileSync(pkgPath, 'utf-8');
         const pkg = JSON.parse(content);
-        return pkg.version || '0.0.0';
+        return pkg.version ?? '0.0.0';
       }
-      dir = path.dirname(dir); // 上一级
+      dir = path.dirname(dir);
     }
 
     console.warn('[VersionInjector] package.json not found');
@@ -27,6 +37,7 @@ export function getPackageVersion(): string {
     return '0.0.0';
   }
 }
+
 /** 默认格式化 build time */
 export function defaultFormatDate(date: Date): string {
   return date.toISOString();
