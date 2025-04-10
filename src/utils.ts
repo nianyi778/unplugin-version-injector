@@ -1,17 +1,33 @@
-import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
+import fs from 'node:fs';
 
-/** 获取 package.json 版本 */
+// Support both ESM and CJS: detect __dirname
+const isESM = typeof __dirname === 'undefined';
+
+function getCallerDir(): string {
+  // try to infer the caller directory
+  const _stack = new Error().stack;
+  if (!_stack) return process.cwd();
+
+  const stackLines = _stack.split('\n');
+  const callerLine = stackLines.find((l) => l.includes('.js') || l.includes('.ts')) || '';
+  const match = callerLine.match(/\((.*):\d+:\d+\)$/) || callerLine.match(/at (.*):\d+:\d+/);
+  if (match) return path.dirname(match[1]);
+
+  return process.cwd();
+}
+
 export function getPackageVersion(): string {
   try {
-    const packageJsonPath = path.resolve(process.cwd(), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      return require(packageJsonPath).version;
-    }
-  } catch (error) {
-    console.warn('[VersionInjector] Failed to read package.json:', error);
+    const baseDir = getCallerDir();
+    const pkgPath = path.resolve(baseDir, 'package.json');
+    const content = fs.readFileSync(pkgPath, 'utf-8');
+    const pkg = JSON.parse(content);
+    return pkg.version || '0.0.0';
+  } catch (e) {
+    console.warn('[VersionInjector] Failed to read package.json:', e);
+    return '0.0.0';
   }
-  return '0.0.0';
 }
 
 /** 默认格式化 build time */
