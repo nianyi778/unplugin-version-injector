@@ -1,17 +1,41 @@
+// Updated version with support for both `formatDate` and `dateFormat`
+
 import { createUnplugin } from 'unplugin';
 import { Compilation, sources } from 'webpack';
 import type { Compiler } from 'webpack';
 import type { VersionInjectorOptions } from './types';
 import { getPackageVersion, defaultFormatDate } from './utils';
 
+let dayjs: any;
+
 const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = {}) => {
-  const shouldInject = options.log !== false;
-  if (!shouldInject) {
+  const {
+    version = getPackageVersion(),
+    formatDate,
+    dateFormat,
+    injectToHead = true,
+    injectToBody = true,
+  } = options;
+
+  // resolve date formatter
+  let resolvedFormatDate: (d: Date) => string = defaultFormatDate;
+
+  if (typeof formatDate === 'function') {
+    resolvedFormatDate = formatDate;
+  } else if (typeof dateFormat === 'string') {
+    try {
+      dayjs = require('dayjs');
+      resolvedFormatDate = (d) => dayjs!(d).format(dateFormat);
+    } catch (err) {
+      console.warn('[unplugin-version-injector] To use `dateFormat`, please install `dayjs` manually.');
+    }
+  }
+
+  if (!injectToHead && !injectToBody) {
     return { name: 'unplugin-version-injector' };
   }
 
-  const version = options.version || getPackageVersion();
-  const buildTime = options.formatDate ? options.formatDate(new Date()) : defaultFormatDate(new Date());
+  const buildTime = resolvedFormatDate(new Date());
 
   const metaTag = `<meta name="version" content="${version}">\n`;
   const logScript = `
@@ -21,10 +45,10 @@ const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = 
   </script>`;
 
   function processHtml(html: string): string {
-    if (!html.includes('<meta name="version"')) {
+    if (injectToHead && !html.includes('<meta name="version"')) {
       html = html.replace(/<head>/, `<head>\n  ${metaTag}`);
     }
-    if (!html.includes('<script>console.log("%c Version:')) {
+    if (injectToBody && !html.includes('<script>console.log("%c Version:')) {
       html = html.replace('</body>', `  ${logScript}\n</body>`);
     }
     return html;
@@ -33,14 +57,12 @@ const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = 
   return {
     name: 'unplugin-version-injector',
 
-    // ✅ Vite 支持
     vite: {
       transformIndexHtml(html: string) {
         return processHtml(html);
-      }
+      },
     },
 
-    // ✅ Rollup 支持
     rollup: {
       generateBundle(_, bundle) {
         for (const file of Object.values(bundle)) {
@@ -48,14 +70,12 @@ const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = 
             file.source = processHtml(file.source as string);
           }
         }
-      }
+      },
     },
 
-    // ✅ Webpack 支持（v4 + v5）
     webpack(compiler: Compiler) {
       const isWebpack5 = typeof sources !== 'undefined' && sources.RawSource;
 
-      // ✔️ Webpack 5: 使用 processAssets 钩子
       if (isWebpack5) {
         compiler.hooks.compilation.tap('unplugin-version-injector', (compilation: Compilation) => {
           compilation.hooks.processAssets.tap(
@@ -68,17 +88,13 @@ const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = 
                 if (filename.endsWith('.html')) {
                   let source = assets[filename].source().toString();
                   source = processHtml(source);
-                  compilation.updateAsset(
-                    filename,
-                    new sources.RawSource(source)
-                  );
+                  compilation.updateAsset(filename, new sources.RawSource(source));
                 }
               });
-            }
+            },
           );
         });
       } else {
-        // ✔️ Webpack 4: 使用 emit 钩子
         compiler.hooks.emit.tapAsync('unplugin-version-injector', (compilation, callback) => {
           Object.keys(compilation.assets).forEach((filename) => {
             if (filename.endsWith('.html')) {
@@ -90,11 +106,10 @@ const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = 
           callback();
         });
       }
-    }
+    },
   };
 });
 
-// ✅ CommonJS 导出
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = VersionInjectorPlugin;
 }

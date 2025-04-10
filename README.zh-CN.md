@@ -1,135 +1,178 @@
-# **🚀 `unplugin-version-injector` - 自动注入版本号 & 构建时间**  
+# 🚀 `unplugin-version-injector` - 自动注入版本号 & 构建时间
 
-[🇬🇧 English README](./README.md) | [🇨🇳 中文 README](./README.zh-CN.md)  
-
----
-
-## **📌 简介**  
-`unplugin-version-injector` 是一个 **轻量级** 插件，可自动将 **版本号** 和 **构建时间** 注入到所有 HTML 文件中。  
-支持 **Webpack 4/5、Vite 和 Rollup**，适用于 **单页应用 (SPA) 和 多页应用 (MPA)**。
-
-### **✨ 功能特点**
-✅ **自动注入** `<meta name="version">` 到所有 HTML `<head>` 部分  
-✅ **自动注入 `<script>`**，在浏览器控制台打印 `版本号` & `构建时间`  
-✅ **兼容 Webpack 4 & 5、Vite 和 Rollup**  
-✅ **支持多页应用 (MPA)**，不会遗漏任何 HTML  
-✅ **支持手动指定版本号**，默认读取 `package.json`  
+[🇬🇧 English README](./README.md) | [🇨🇳 中文 README](./README.zh-CN.md)
 
 ---
 
-## **📦 安装**
-```sh
-# 使用 Yarn
-yarn add -D unplugin-version-injector
+## 📌 简介
 
+`unplugin-version-injector` 是一个 **轻量级通用插件**，可在构建时自动将 **版本号** 和 **构建时间** 注入 HTML 文件中。  
+兼容 **Webpack 4/5、Vite 和 Rollup**，适用于 **SPA / MPA** 多种项目结构。
+
+---
+
+## ✨ 功能特点
+
+- ✅ 自动注入 `<meta name="version">` 到 HTML `<head>`
+- ✅ 自动注入 `<script>`，在浏览器控制台打印版本号与构建时间
+- ✅ 支持 Webpack 4、Webpack 5、Vite、Rollup
+- ✅ 支持多页应用（MPA），自动处理所有 HTML 文件
+- ✅ 支持自定义版本号、自定义构建时间格式
+- ✅ 体积小、零运行时依赖
+
+---
+
+## 📦 安装
+
+```bash
 # 使用 npm
 npm install -D unplugin-version-injector
+
+# 使用 yarn
+yarn add -D unplugin-version-injector
 ```
 
 ---
 
-## **🚀 使用方法**
+## 🚀 使用方法
 
-### **📌 Webpack 4/5**
-修改 `webpack.config.js`：
+### ✅ Vite
+
+```ts
+// vite.config.ts
+import versionInjector from 'unplugin-version-injector/vite';
+
+export default {
+  plugins: [versionInjector()],
+};
+```
+
+---
+
+### ✅ Webpack 4 / 5
+
 ```js
-const versionInjectorPlugin = require('unplugin-version-injector');
+// webpack.config.js
+const versionInjector = require('unplugin-version-injector/webpack');
 
 module.exports = {
   plugins: [
-    versionInjectorPlugin.webpack({
-      version: '1.2.3',  // （可选）手动指定版本号
-    })
+    versionInjector({
+      version: '1.2.3',
+      injectToHead: true,
+      injectToBody: true,
+    }),
   ],
 };
 ```
 
 ---
 
-### **📌 Vite**
-修改 `vite.config.js`：
+### ✅ Rollup
+
 ```js
-import versionInjectorPlugin from 'unplugin-version-injector';
+// rollup.config.js
+import versionInjector from 'unplugin-version-injector/rollup';
 
 export default {
-  plugins: [versionInjectorPlugin.vite()]
+  plugins: [
+    versionInjector({
+      dateFormat: 'YYYY-MM-DD HH:mm:ss',
+    }),
+  ],
 };
 ```
 
 ---
 
-### **📌 Rollup**
-修改 `rollup.config.js`：
-```js
-import versionInjectorPlugin from 'unplugin-version-injector';
+## 📜 注入效果示例
 
-export default {
-  plugins: [versionInjectorPlugin.rollup()]
-};
-```
-
----
-
-## **📜 生成的 HTML 示例**
-构建完成后，所有 HTML 文件将包含以下内容：
 ```html
 <head>
   <meta name="version" content="1.2.3">
   <meta charset="UTF-8">
-  <title>我的应用</title>
 </head>
 <body>
-  <h1>Hello World</h1>
+  <h1>Hello</h1>
   <script>
-    console.log("%c 版本号: 1.2.3 ", "background: #222; color: #00ff00; font-size: 12px; padding: 4px; border-radius: 4px;");
-    console.log("%c 构建时间: 2024-03-01T12:00:00.000Z ", "background: #222; color: #ffcc00; font-size: 12px; padding: 4px; border-radius: 4px;");
+    console.log("%c 版本号: 1.2.3 ", "background: #222; color: #00ff00; font-size: 12px;");
+    console.log("%c 构建时间: 2025-04-10 14:00:00 ", "background: #222; color: #ffcc00; font-size: 12px;");
   </script>
 </body>
 ```
 
-✅ **浏览器控制台输出 (带颜色日志)**  
+✅ 控制台输出示例：
+
 ```
-🟢 版本号: 1.2.3  (绿色)
-🟡 构建时间: 2024-03-01T12:00:00.000Z  (黄色)
+🟢 版本号: 1.2.3
+🟡 构建时间: 2025-04-10 14:00:00
 ```
 
 ---
 
-## **🔧 配置选项**
-| **选项** | **类型** | **描述** | **默认值** |
-|---------|--------|---------|---------|
-| `version`  | `string` | 手动指定版本号 (如 `1.2.3`) | 自动读取 `package.json` |
-| `log`      | `boolean` | 是否在控制台打印版本信息 | `true` |
-| `dateFormat` | `string` | 自定义构建时间格式 | `ISO 8601` |
+## 🔧 配置选项
 
-### **📌 自定义配置示例**
-```js
-versionInjectorPlugin.webpack({
-  version: '2.0.0', 
-  log: false,  // 关闭控制台日志
+| 选项            | 类型                          | 默认值                        | 说明 |
+|-----------------|-------------------------------|-------------------------------|------|
+| `version`       | `string`                      | 自动读取 `package.json`       | 手动指定版本号 |
+| `formatDate`    | `(date: Date) => string`      | `YYYY-MM-DD HH:mm:ss`         | 自定义时间格式函数 |
+| `dateFormat`    | `string`                      | 无                            | 使用 `dayjs` 格式化（需用户安装） |
+| `injectToHead`  | `boolean`                     | `true`                        | 是否注入 `<meta>` 标签 |
+| `injectToBody`  | `boolean`                     | `true`                        | 是否注入控制台日志脚本 |
+
+📦 如果使用 `dateFormat`，请先安装：
+
+```bash
+npm install dayjs
+```
+
+---
+
+## 📌 自定义配置示例
+
+```ts
+versionInjector({
+  version: '2.0.0',
+  injectToHead: true,
+  injectToBody: false,
+  dateFormat: 'YYYY/MM/DD HH:mm:ss',
 });
 ```
 
 ---
 
-## **🌍 为什么选择 `unplugin-version-injector`？**
-- 🛠 **开箱即用**：安装后立即生效，无需额外配置  
-- 🚀 **提升调试效率**：轻松查看当前版本信息  
-- 📅 **追踪构建时间**：方便监控不同版本的发布时间  
-- 🎯 **轻量高效**：几乎不会影响构建速度  
+## 🧪 支持的构建工具
+
+| 构建工具     | 状态     | 说明 |
+|--------------|----------|------|
+| **Vite**     | ✅ 支持   | 使用 `transformIndexHtml` |
+| **Webpack 5**| ✅ 支持   | 使用 `processAssets` 钩子 |
+| **Webpack 4**| ✅ 支持   | 使用 `emit` 钩子 |
+| **Rollup**   | ✅ 支持   | 使用 `generateBundle` 钩子 |
 
 ---
 
-## **📜 许可证**
-MIT License © 2024 [Nian YI](https://github.com/nianyi778)  
+## 💡 应用场景
+
+- 🧪 快速定位部署版本与构建时间
+- 📅 部署监控 / 运维可见性
+- ⚡️ 零运行时依赖，构建时注入
 
 ---
 
-## **💡 贡献**
-欢迎 PR！如有问题，欢迎在 GitHub 提交 issue。  
+## 📄 许可证
 
-**GitHub 仓库**：[🔗 unplugin-version-injector](https://github.com/nianyi778/unplugin-version-injector)  
+MIT © [Nian YI](https://github.com/nianyi778)
 
 ---
 
-🔥 **`unplugin-version-injector` - 让你的应用版本管理更简单！** 🚀🚀🚀
+## 🤝 参与贡献
+
+欢迎提交 PR 和 issue！
+
+GitHub 仓库：  
+[https://github.com/nianyi778/unplugin-version-injector](https://github.com/nianyi778/unplugin-version-injector)
+
+---
+
+🔥 `unplugin-version-injector` —— 让你的应用版本信息透明、可追踪！
