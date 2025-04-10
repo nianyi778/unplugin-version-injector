@@ -1,67 +1,65 @@
 {
-    "name": "unplugin-version-injector",
-    "version": "1.1.1-alpha.0",
-    "author": "Nian Yi <nianyi778@gmail.com>",
-    "license": "MIT",
-    "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/nianyi778/unplugin-version-injector.git"
-    },
-    "keywords": [
-        "unplugin",
-        "version",
-        "injector",
-        "webpack",
-        "vite",
-        "rollup"
-    ],
-   "exports": {
-  ".": {
-    "import": "./dist/vite.mjs",
-    "require": "./dist/vite.js",
-    "types": "./dist/vite.d.ts"
+  "name": "unplugin-version-injector",
+  "version": "1.1.1-alpha.0",
+  "author": "Nian Yi <nianyi778@gmail.com>",
+  "license": "MIT",
+  "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nianyi778/unplugin-version-injector.git"
   },
-  "./vite": {
-    "import": "./dist/vite.mjs",
-    "require": "./dist/vite.js",
-    "types": "./dist/vite.d.ts"
+  "keywords": [
+    "unplugin",
+    "version",
+    "injector",
+    "webpack",
+    "vite",
+    "rollup"
+  ],
+  "main": "./dist/core.js",
+  "module": "./dist/core.mjs",
+  "types": "./dist/core.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.js"
+    },
+    "./vite": {
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.js"
+    },
+    "./rollup": {
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.js"
+    },
+    "./webpack": {
+      "import": "./dist/webpack.mjs",
+      "require": "./dist/webpack.js"
+    }
   },
-  "./rollup": {
-    "import": "./dist/rollup.mjs",
-    "require": "./dist/rollup.js",
-    "types": "./dist/rollup.d.ts"
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run clean && npm run build"
   },
-  "./webpack": {
-    "import": "./dist/webpack.mjs",
-    "require": "./dist/webpack.js",
-    "types": "./dist/webpack.d.ts"
-  }
-},
-    "types": "./dist/index.d.mts",
-"scripts": {
-  "clean": "rm -rf dist",
-  "build": "tsup",
-  "dev": "tsup --watch",
-  "prepublishOnly": "npm run clean && npm run build"
-},
-    "dependencies": {
-        "tsup": "^8.4.0",
-        "unplugin": "^1.0.0"
-    },
-    "devDependencies": {
-        "rollup": "^3",
-        "typescript": "^4.9.5",
-        "vite": "^4",
-        "webpack": "^5"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "README.zh-CN.md"
-    ],
-    "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
+  "dependencies": {
+    "tsup": "^8.4.0",
+    "unplugin": "^1.0.0"
+  },
+  "devDependencies": {
+    "rollup": "^3",
+    "typescript": "^4.9.5",
+    "vite": "^4",
+    "webpack": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
 }
