@@ -1,24 +1,20 @@
-import path from 'node:path';
 import fs from 'node:fs';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function getDirname(): string {
+function getCurrentDir(): string {
   try {
-    // @ts-ignore – only works in ESM
-    if (typeof import.meta !== 'undefined' && import.meta.url) {
-      return path.dirname(fileURLToPath(import.meta.url));
-    }
+    // 在 ESM 中使用 import.meta.url
+    return path.dirname(fileURLToPath(import.meta.url));
   } catch {
-    // ignore
+    // fallback（极少用到，保守写法）
+    return process.cwd();
   }
-
-  // fallback for CJS
-  return __dirname;
 }
 
 export function getPackageVersion(): string {
   try {
-    let dir = getDirname();
+    let dir = getCurrentDir();
 
     while (dir !== path.parse(dir).root) {
       const pkgPath = path.join(dir, 'package.json');
@@ -37,7 +33,6 @@ export function getPackageVersion(): string {
     return '0.0.0';
   }
 }
-
 /** 默认格式化 build time */
 export function defaultFormatDate(date: Date): string {
   return date.toISOString();
