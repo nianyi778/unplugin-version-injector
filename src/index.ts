@@ -1,14 +1,13 @@
 import { createUnplugin } from 'unplugin';
 import { Compilation, sources } from 'webpack';
+import type { Compiler } from 'webpack';
 import type { VersionInjectorOptions } from './types';
 import { getPackageVersion, defaultFormatDate } from './utils';
 
- const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = {}) => {
-
-  const shouldInject = options.log !== false; // ✅ 只有 log: false 时不注入
-
+const VersionInjectorPlugin = createUnplugin((options: VersionInjectorOptions = {}) => {
+  const shouldInject = options.log !== false;
   if (!shouldInject) {
-    return { name: 'unplugin-version-injector' }; // ❌ 直接返回空插件，避免无意义的操作
+    return { name: 'unplugin-version-injector' };
   }
 
   const version = options.version || getPackageVersion();
@@ -34,44 +33,70 @@ import { getPackageVersion, defaultFormatDate } from './utils';
   return {
     name: 'unplugin-version-injector',
 
-    // ✅ Vite 适配
+    // ✅ Vite 支持
     vite: {
       transformIndexHtml(html: string) {
         return processHtml(html);
       }
     },
 
-    // ✅ Webpack 适配
-    webpack(compiler) {
-      compiler.hooks.compilation.tap('unplugin-version-injector', (compilation: Compilation) => {
-        compilation.hooks.processAssets.tap(
-          {
-            name: 'unplugin-version-injector',
-            stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE,
-          },
-          (assets) => {
-            Object.keys(assets).forEach((filename) => {
-              if (filename.endsWith('.html')) {
-                let source = assets[filename].source().toString();
-                source = processHtml(source);
-
-                compilation.updateAsset(
-                  filename,
-                  new sources.RawSource(source) // ✅ 修正 updateAsset 类型
-                );
-              }
-            });
+    // ✅ Rollup 支持
+    rollup: {
+      generateBundle(_, bundle) {
+        for (const file of Object.values(bundle)) {
+          if (file.type === 'asset' && file.fileName.endsWith('.html')) {
+            file.source = processHtml(file.source as string);
           }
-        );
-      });
+        }
+      }
+    },
+
+    // ✅ Webpack 支持（v4 + v5）
+    webpack(compiler: Compiler) {
+      const isWebpack5 = typeof sources !== 'undefined' && sources.RawSource;
+
+      // ✔️ Webpack 5: 使用 processAssets 钩子
+      if (isWebpack5) {
+        compiler.hooks.compilation.tap('unplugin-version-injector', (compilation: Compilation) => {
+          compilation.hooks.processAssets.tap(
+            {
+              name: 'unplugin-version-injector',
+              stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE,
+            },
+            (assets) => {
+              Object.keys(assets).forEach((filename) => {
+                if (filename.endsWith('.html')) {
+                  let source = assets[filename].source().toString();
+                  source = processHtml(source);
+                  compilation.updateAsset(
+                    filename,
+                    new sources.RawSource(source)
+                  );
+                }
+              });
+            }
+          );
+        });
+      } else {
+        // ✔️ Webpack 4: 使用 emit 钩子
+        compiler.hooks.emit.tapAsync('unplugin-version-injector', (compilation, callback) => {
+          Object.keys(compilation.assets).forEach((filename) => {
+            if (filename.endsWith('.html')) {
+              const rawSource = compilation.assets[filename].source().toString();
+              const newSource = processHtml(rawSource);
+              compilation.assets[filename] = new sources.RawSource(newSource);
+            }
+          });
+          callback();
+        });
+      }
     }
   };
 });
 
-// ✅ 兼容 Webpack / Vite / Rollup
-
+// ✅ CommonJS 导出
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = VersionInjectorPlugin; // ✅ 让 CommonJS 直接拿到
+  module.exports = VersionInjectorPlugin;
 }
 
 export default VersionInjectorPlugin;
