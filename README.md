@@ -1,178 +1,134 @@
-# 🚀 `unplugin-version-injector` - Auto Inject Version & Build Time into HTML
+### **🚀 `unplugin-version-injector` - Auto Inject Version & Build Time**  
 
-[🇨🇳 中文文档](./README.zh-CN.md) | [🇺🇸 English README](./README.md)
-
----
-
-## 📌 Introduction
-
-`unplugin-version-injector` is a lightweight universal plugin that automatically injects **version number** and **build timestamp** into HTML files during build.  
-It supports **Webpack 4/5**, **Vite**, and **Rollup**, and works perfectly in **SPA** and **MPA** projects.
+[🇨🇳 中文 README](./README.zh-CN.md) | [🇬🇧 English README](./README.md)  
 
 ---
 
-## ✨ Features
+## **📌 Introduction**  
+`unplugin-version-injector` is a powerful and lightweight plugin that automatically injects the **version number** and **build timestamp** into all HTML files. It supports **Webpack 4/5, Vite, and Rollup**, making it ideal for both **Single Page Applications (SPA)** and **Multi-Page Applications (MPA)**.  
 
-- ✅ Auto-injects `<meta name="version">` into HTML `<head>`
-- ✅ Auto-injects `<script>` to log version/build time to the browser console
-- ✅ Supports Webpack 4, Webpack 5, Vite, and Rollup
-- ✅ Supports Multi-Page Applications (MPA)
-- ✅ Supports custom version & timestamp format
-- ✅ Tiny, fast, and zero-runtime dependency
+### **✨ Features**
+✅ **Auto-injects** `<meta name="version">` into all HTML `<head>` sections  
+✅ **Auto-injects a `<script>`** that logs `version` & `build time` in the browser console  
+✅ **Supports Webpack 4 & 5, Vite, and Rollup**  
+✅ **Works in Multi-Page Applications (MPA)**  
+✅ **Highly configurable**: Supports manually specifying the version or using `package.json`  
 
 ---
 
-## 📦 Installation
-
-```bash
-# With npm
-npm install -D unplugin-version-injector
-
-# With yarn
+## **📦 Installation**
+```sh
+# Using Yarn
 yarn add -D unplugin-version-injector
+
+# Using npm
+npm install -D unplugin-version-injector
 ```
 
 ---
 
-## 🚀 Usage
+## **🚀 Usage**
 
-### ✅ Vite
-
-```ts
-// vite.config.ts
-import versionInjector from 'unplugin-version-injector/vite';
-
-export default {
-  plugins: [versionInjector()],
-};
-```
-
----
-
-### ✅ Webpack 4 / 5
-
+### **📌 Webpack 4/5**
+Modify your `webpack.config.js`:  
 ```js
-// webpack.config.js
-const versionInjector = require('unplugin-version-injector/webpack');
+const versionInjectorPlugin = require('unplugin-version-injector');
 
 module.exports = {
   plugins: [
-    versionInjector({
-      version: '1.2.3',
-      injectToHead: true,
-      injectToBody: true,
-    }),
+    versionInjectorPlugin.webpack({
+      version: '1.2.3',  // (Optional) Manually specify version
+    })
   ],
 };
 ```
 
 ---
 
-### ✅ Rollup
-
+### **📌 Vite**
+Modify your `vite.config.js`:  
 ```js
-// rollup.config.js
-import versionInjector from 'unplugin-version-injector/rollup';
+import versionInjectorPlugin from 'unplugin-version-injector';
 
 export default {
-  plugins: [
-    versionInjector({
-      dateFormat: 'YYYY-MM-DD HH:mm:ss',
-    }),
-  ],
+  plugins: [versionInjectorPlugin.vite()]
 };
 ```
 
 ---
 
-## 📜 Output Example
+### **📌 Rollup**
+Modify your `rollup.config.js`:  
+```js
+import versionInjectorPlugin from 'unplugin-version-injector';
 
+export default {
+  plugins: [versionInjectorPlugin.rollup()]
+};
+```
+
+---
+
+## **📜 Example Output**
+After building, all HTML files will include the following:  
 ```html
 <head>
   <meta name="version" content="1.2.3">
   <meta charset="UTF-8">
+  <title>My App</title>
 </head>
 <body>
-  <h1>Hello</h1>
+  <h1>Hello World</h1>
   <script>
-    console.log("%c Version: 1.2.3 ", "background: #222; color: #00ff00; font-size: 12px;");
-    console.log("%c Build Time: 2025-04-10 14:00:00 ", "background: #222; color: #ffcc00; font-size: 12px;");
+    console.log("%c Version: 1.2.3 ", "background: #222; color: #00ff00; font-size: 12px; padding: 4px; border-radius: 4px;");
+    console.log("%c Build Time: 2024-03-01T12:00:00.000Z ", "background: #222; color: #ffcc00; font-size: 12px; padding: 4px; border-radius: 4px;");
   </script>
 </body>
 ```
 
-✅ Console output example:
-
+✅ **Console Output (Colored Logs)**  
 ```
-🟢 Version: 1.2.3
-🟡 Build Time: 2025-04-10 14:00:00
-```
-
----
-
-## 🔧 Configuration Options
-
-| Option         | Type                        | Default                           | Description |
-|----------------|-----------------------------|-----------------------------------|-------------|
-| `version`      | `string`                    | Auto from `package.json`          | Manually specify a version |
-| `formatDate`   | `(date: Date) => string`    | `YYYY-MM-DD HH:mm:ss`             | Custom date formatter |
-| `dateFormat`   | `string`                    | None                              | Uses `dayjs` to format time (requires installation) |
-| `injectToHead` | `boolean`                   | `true`                            | Injects `<meta name="version">` into `<head>` |
-| `injectToBody` | `boolean`                   | `true`                            | Injects version log `<script>` into `<body>` |
-
-📦 If using `dateFormat`, please install `dayjs` manually:
-
-```bash
-npm install dayjs
+🟢 Version: 1.2.3  (Green)
+🟡 Build Time: 2024-03-01T12:00:00.000Z  (Yellow)
 ```
 
 ---
 
-## 📌 Custom Example
+## **🔧 Configuration Options**
+| **Option** | **Type** | **Description** | **Default** |
+|------------|---------|----------------|-------------|
+| `version`  | `string` | Custom version (e.g., `1.2.3`) | Auto-read from `package.json` |
+| `log`      | `boolean` | Enable/Disable console logs | `true` |
+| `dateFormat` | `string` | Format for build time | `ISO 8601` |
 
-```ts
-versionInjector({
-  version: '2.0.0',
-  injectToHead: true,
-  injectToBody: false,
-  dateFormat: 'YYYY/MM/DD HH:mm:ss',
+### **Example: Custom Config**
+```js
+versionInjectorPlugin.webpack({
+  version: '2.0.0', 
+  log: false,  // Disable console logs
 });
 ```
 
 ---
 
-## 🧪 Supported Build Tools
-
-| Build Tool   | Supported | Description                      |
-|--------------|-----------|----------------------------------|
-| **Vite**     | ✅        | Uses `transformIndexHtml` hook  |
-| **Webpack 5**| ✅        | Uses `processAssets` hook       |
-| **Webpack 4**| ✅        | Uses `emit` hook                |
-| **Rollup**   | ✅        | Uses `generateBundle` hook      |
+## **🌍 Why Use This Plugin?**
+- 🛠 **Works out of the box**: No extra setup needed  
+- 🚀 **Improves debugging**: Always know what version is running in production  
+- 📅 **Track build times**: Useful for monitoring deployments  
+- 🎯 **Lightweight & fast**: Minimal overhead with maximum benefits  
 
 ---
 
-## 💡 Use Cases
-
-- 🧪 Quickly identify deployed version & build time
-- 📅 Useful for deployment tracking / diagnostics
-- ⚡️ No runtime cost – build-time only
+## **📜 License**
+MIT License © 2024 [Nian YI](https://github.com/nianyi778)  
 
 ---
 
-## 📄 License
+## **💡 Contributing**
+Pull requests are welcome! If you encounter any issues, feel free to open an issue on GitHub.  
 
-MIT © [Nian YI](https://github.com/nianyi778)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-GitHub Repo:  
-[https://github.com/nianyi778/unplugin-version-injector](https://github.com/nianyi778/unplugin-version-injector)
+**GitHub Repository:** [🔗 unplugin-version-injector](https://github.com/nianyi778/unplugin-version-injector)  
 
 ---
 
-🔥 `unplugin-version-injector` – The simplest way to track version and build time in your HTML!
+🔥 **`unplugin-version-injector` – The simplest way to keep track of your app's version & build time!** 🚀
