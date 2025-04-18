@@ -1,41 +1,68 @@
 {
   "name": "unplugin-version-injector",
-  "version": "1.1.2",
+  "version": "2.0.0-beta.1",
   "author": "Nian Yi <nianyi778@gmail.com>",
   "license": "MIT",
   "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/nianyi778/unplugin-version-injector.git"
+    "type": "git",
+    "url": "https://github.com/nianyi778/unplugin-version-injector.git"
   },
-  "keywords": ["unplugin", "version", "injector", "webpack", "vite", "rollup"],
-  "main": "./dist/cjs/index.js",  
-  "module": "./dist/esm/index.js", 
+  "keywords": [
+    "version",
+    "injector",
+    "webpack",
+    "vite",
+    "rollup"
+  ],
+  "typesVersions": {
+    "*": {
+      "vite": [
+        "./dist/vite.d.ts"
+      ],
+      "webpack": [
+        "./dist/webpack.d.ts"
+      ],
+      "rollup": [
+        "./dist/rollup.d.ts"
+      ]
+    }
+  },
   "exports": {
-      "require": "./dist/cjs/index.js",
-      "import": "./dist/esm/index.js",
-      "default": "./dist/esm/index.js"
+    "./vite": {
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.js"
+    },
+    "./webpack": {
+      "import": "./dist/webpack.mjs",
+      "require": "./dist/webpack.js"
+    },
+    "./rollup": {
+      "import": "./dist/rollup.mjs",
+      "require": "./dist/rollup.js"
+    }
   },
-  "types": "./dist/index.d.ts",
   "scripts": {
-      "clean": "rm -rf dist",
-      "build:esm": "tsc --module ESNext --outDir dist/esm",
-      "build:cjs": "tsc --module CommonJS --outDir dist/cjs",
-      "build": "npm run clean && npm run build:esm && npm run build:cjs",
-      "prepublishOnly": "npm run build"
+    "clean": "rm -rf dist",
+    "build": "tsup",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-      "unplugin": "^1.0.0"
+    "tsup": "^8.4.0"
   },
   "devDependencies": {
-      "typescript": "^4.9.5",
-      "webpack": "^5",
-      "vite": "^4",
-      "rollup": "^3"
+    "typescript": "^4.9.5",
+    "webpack": "^5",
+    "vite": "^4",
+    "rollup": "^3"
   },
   "publishConfig": {
-      "access": "public"
+    "access": "public"
   },
-  "files": ["dist","README.md","README.zh-CN.md"],    
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-CN.md"
+  ],
   "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
 }
