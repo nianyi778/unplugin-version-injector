@@ -1,6 +1,6 @@
 {
   "name": "unplugin-version-injector",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0",
   "author": "Nian Yi <nianyi778@gmail.com>",
   "license": "MIT",
   "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
@@ -48,13 +48,15 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@types/node": "^22.14.1",
     "tsup": "^8.4.0"
   },
   "devDependencies": {
+    "rollup": "^3",
     "typescript": "^4.9.5",
-    "webpack": "^5",
     "vite": "^4",
-    "rollup": "^3"
+    "webpack": "^5",
+    "webpack-sources": "^3.2.3"
   },
   "publishConfig": {
     "access": "public"
