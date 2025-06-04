@@ -5,16 +5,17 @@
 ---
 
 ## **📌 插件简介**
-`unplugin-version-injector` 是一个轻量级插件，可在构建时自动向所有 HTML 文件注入 **版本号** 和 **构建时间戳**。支持 **Webpack 4/5、Vite 和 Rollup**，非常适合 **SPA / MPA 项目**使用。
+`unplugin-version-injector` 是一个轻量级插件，可在构建时自动向所有 HTML 文件注入 **版本号**、**构建时间戳** 和 **项目名**。支持 **Webpack 4/5、Vite 和 Rollup**，适用于 **SPA / MPA 项目**。
 
 ---
 
 ## **✨ 功能亮点**
-✅ 自动注入 `<meta name="version">` 到 HTML 的 `<head>` 中  
-✅ 自动注入 `<script>`，控制台输出 `版本号` 和 `构建时间`  
+✅ 自动注入 `<meta name="version">` 和 `<meta name="project">` 到 HTML `<head>`  
+✅ 自动注入 `<script>`，控制台输出 `项目名`、`版本号` 和 `构建时间`  
 ✅ 支持 Webpack 4 / 5、Vite、Rollup  
 ✅ 完美兼容多页面应用（MPA）  
-✅ 支持自定义版本号、时间格式，默认读取 `package.json`
+✅ 支持自定义版本号、项目名、时间格式，默认读取 `package.json`  
+✅ 控制台输出支持自动适配深/浅主题配色  
 
 ---
 
@@ -52,6 +53,7 @@ module.exports = {
   plugins: [
     versionInjector({
       version: '1.2.3', // 可选，自定义版本号
+      name: 'MyApp'     // 可选，自定义项目名
     }),
   ],
 };
@@ -78,43 +80,41 @@ export default {
 ```html
 <head>
   <meta name="version" content="1.2.3">
-  ...
+  <meta name="project" content="MyApp">
 </head>
 <body>
   ...
-  <script>
-    console.log("%c Version: 1.2.3 ", "background: #222; color: #00ff00;");
-    console.log("%c Build Time: 2024-04-01T12:00:00.000Z ", "background: #222; color: #ffcc00;");
+  <script data-injected="unplugin-version-injector">
+    console.log(...);
   </script>
 </body>
 ```
 
-控制台输出：
+控制台输出（根据主题自适应配色）：
 
 ```
+🟦 Project: MyApp
 🟢 Version: 1.2.3
-🟡 Build Time: 2024-04-01T12:00:00.000Z
+🟡 Build Time: 2024-06-04T12:00:00.000Z
 ```
 
 ---
 
 ## **🔧 配置项说明**
 
-| 选项           | 类型      | 说明                          | 默认值           |
-|----------------|-----------|-------------------------------|------------------|
-| `version`      | `string`  | 指定版本号                   | 自动读取 package.json |
-| `log`          | `boolean` | 是否输出控制台日志            | `true`           |
-| `dateFormat`   | `string`  | 使用 dayjs 自定义时间格式     | `ISO 格式`       |
+| 选项         | 类型      | 说明                             | 默认值              |
+|--------------|-----------|----------------------------------|---------------------|
+| `version`    | `string`  | 自定义版本号                     | 自动读取 package.json |
+| `name`       | `string`  | 自定义项目名                     | 自动读取 package.json |
+| `log`        | `boolean` | 是否输出控制台日志               | `true`              |
+| `formatDate` | `Date => string` | 自定义时间格式函数         | ISO 格式            |
 
 ---
 
-## **🌍 为什么选择这个插件？**
-
-- 🛠 零配置，开箱即用  
-- 🚀 快速定位版本问题  
-- 📅 跟踪构建时间  
-- 🎯 支持多构建工具  
-- 🧩 高度可配置，灵活插拔  
+## **🎨 控制台配色自动适配说明**
+- 插件自动判断浏览器是否为暗色模式（`window.matchMedia('(prefers-color-scheme: dark')`）；
+- 深色模式下将使用亮色字体以确保可读性；
+- 你也可以重写 `<script>` 注入逻辑以自定义样式。
 
 ---
 

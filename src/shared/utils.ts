@@ -4,7 +4,7 @@ import path from 'path';
 /**
  * 获取当前执行目录向上查找的最近的 package.json 中的版本号
  */
-export function getPackageVersion(startDir?: string): string {
+export function getPackageVersion(startDir?: string): {version: string,name: string} {
   try {
     let dir = startDir || process.cwd();
 
@@ -12,16 +12,16 @@ export function getPackageVersion(startDir?: string): string {
       const pkgPath = path.join(dir, 'package.json');
       if (fs.existsSync(pkgPath)) {
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-        return pkg.version || '0.0.0';
+        return { version: pkg.version || '0.0.0', name: pkg.name || 'unknown' };
       }
       dir = path.dirname(dir);
     }
 
     console.warn('[VersionInjector] package.json not found');
-    return '0.0.0';
+    return { version: '0.0.0', name: 'unknown' };
   } catch (err) {
     console.warn('[VersionInjector] Failed to read package.json:', err);
-    return '0.0.0';
+    return { version: '0.0.0', name: 'unknown' };
   }
 }
 
