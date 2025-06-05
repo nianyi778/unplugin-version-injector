@@ -16,11 +16,9 @@ export function createVersionInjector(options: VersionInjectorOptions = {}) {
     var border = 'border-radius: 4px; padding: 4px; font-size: 12px;';
     var styles = {
       version: \`background: \${bg}; color: #00c853; \${border}\`,
-      name:    \`background: \${bg}; color: #1e88e5; \${border}\`,
       time:    \`background: \${bg}; color: #ffab00; \${border}\`,
     };
-    console.log("%c Version: ${version} ", styles.version);
-    console.log("%c Project: ${name} ", styles.name);
+    console.log("%c ${name}@${version} ", styles.version);
     console.log("%c Build Time: ${buildTime} ", styles.time);
   })();
 </script>`;
