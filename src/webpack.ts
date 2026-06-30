@@ -1,7 +1,8 @@
 import type { Compiler } from 'webpack';
 import { createVersionInjector } from './core';
+import type {VersionInjectorOptions} from "./types";
 
-export default function versionInjectorPlugin(options = {}) {
+export default function versionInjectorPlugin(options:VersionInjectorOptions = {}) {
   const inject = createVersionInjector(options);
 
   return {

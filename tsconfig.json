@@ -8,7 +8,8 @@
       "esModuleInterop": true,
       "skipLibCheck": true,
       "declaration": true, 
-      "outDir": "dist"
+      "outDir": "dist",
+      "jsx": "react"
     },
     "include": ["src"]
   }

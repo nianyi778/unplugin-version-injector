@@ -1,14 +1,16 @@
-import { getPackageVersion, defaultFormatDate } from './shared/utils';
-import { VersionInjectorOptions } from './types';
+import {defaultFormatDate, getPackageVersion} from './shared/utils';
+import type {VersionInjectorOptions} from './types';
+import {isString} from "es-toolkit/compat";
+import dayjs from "dayjs";
 
 export function createVersionInjector(options: VersionInjectorOptions = {}) {
-  const { version, name } =
-    options.version && options.name ? options : getPackageVersion();
-  const buildTime = (options.formatDate ?? defaultFormatDate)(new Date());
+    const {version, name} = options.version && options.name ? options : getPackageVersion();
 
-  const metaTag = `<meta name="version" content="${version}">\n<meta name="project" content="${name}">\n`;
+    const buildTime = isString(options.formatDate) ? dayjs(new Date()).format(options.formatDate) : (options.formatDate ?? defaultFormatDate)(new Date());
 
-  const logScript = `
+    const metaTag = `<meta name="version" content="${version}">\n<meta name="project" content="${name}">\n`;
+
+    const logScript = `
 <script data-injected="unplugin-version-injector">
   (function () {
     var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -23,18 +25,18 @@ export function createVersionInjector(options: VersionInjectorOptions = {}) {
   })();
 </script>`;
 
-  return function processHtml(html: string): string {
-    if (!html.includes('<meta name="version"')) {
-      html = html.replace(/<head>/i, `<head>\n  ${metaTag}`);
-    }
+    return function processHtml(html: string): string {
+        if (!html.includes('<meta name="version"')) {
+            html = html.replace(/<head>/i, `<head>\n  ${metaTag}`);
+        }
 
-    if (
-      options.log !== false &&
-      !html.includes('data-injected="unplugin-version-injector"')
-    ) {
-      html = html.replace(/<\/body>/i, `  ${logScript}\n</body>`);
-    }
+        if (
+            options.log !== false &&
+            !html.includes('data-injected="unplugin-version-injector"')
+        ) {
+            html = html.replace(/<\/body>/i, `  ${logScript}\n</body>`);
+        }
 
-    return html;
-  };
+        return html;
+    };
 }

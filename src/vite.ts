@@ -1,7 +1,8 @@
 import type { Plugin } from 'vite';
 import { createVersionInjector } from './core';
+import type {VersionInjectorOptions} from "./types";
 
-export default function versionInjectorPlugin(options = {}): Plugin {
+export default function versionInjectorPlugin(options:VersionInjectorOptions = {}): Plugin {
   const inject = createVersionInjector(options);
 
   return {

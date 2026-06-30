@@ -33,5 +33,16 @@ export default defineConfig([
     splitting: false,
     shims: false,
     treeshake: true,
+  },
+  {
+    entry: ['src/rolldown.ts'],
+    outDir: 'dist',
+    format: ['esm', 'cjs'],
+    dts: true,
+    clean: false,
+    platform: 'node',
+    splitting: false,
+    shims: false,
+    treeshake: true,
   }
 ]);
