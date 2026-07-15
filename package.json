@@ -1,9 +1,9 @@
 {
   "name": "unplugin-version-injector",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "author": "Nian Yi <nianyi778@gmail.com>",
   "license": "MIT",
-  "description": "A universal plugin to inject version and build time into HTML (supports Webpack, Vite, Rollup)",
+  "description": "A universal plugin to inject version and build time into HTML (supports Vite, Webpack, Rspack, Rollup, Rolldown)",
   "repository": {
     "type": "git",
     "url": "https://github.com/nianyi778/unplugin-version-injector.git"
@@ -11,50 +11,126 @@
   "keywords": [
     "version",
     "injector",
+    "unplugin",
     "webpack",
     "vite",
-    "rollup"
+    "rspack",
+    "rollup",
+    "rolldown"
   ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "vite": [
-        "./dist/vite.d.ts"
-      ],
-      "webpack": [
-        "./dist/webpack.d.ts"
-      ],
-      "rollup": [
-        "./dist/rollup.d.ts"
+      "*": [
+        "./dist/*.d.ts"
       ]
     }
   },
   "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
     "./vite": {
-      "import": "./dist/vite.mjs",
-      "require": "./dist/vite.js"
+      "import": {
+        "types": "./dist/vite.d.mts",
+        "default": "./dist/vite.mjs"
+      },
+      "require": {
+        "types": "./dist/vite.d.ts",
+        "default": "./dist/vite.js"
+      }
     },
     "./webpack": {
-      "import": "./dist/webpack.mjs",
-      "require": "./dist/webpack.js"
+      "import": {
+        "types": "./dist/webpack.d.mts",
+        "default": "./dist/webpack.mjs"
+      },
+      "require": {
+        "types": "./dist/webpack.d.ts",
+        "default": "./dist/webpack.js"
+      }
+    },
+    "./rspack": {
+      "import": {
+        "types": "./dist/rspack.d.mts",
+        "default": "./dist/rspack.mjs"
+      },
+      "require": {
+        "types": "./dist/rspack.d.ts",
+        "default": "./dist/rspack.js"
+      }
     },
     "./rollup": {
-      "import": "./dist/rollup.mjs",
-      "require": "./dist/rollup.js"
+      "import": {
+        "types": "./dist/rollup.d.mts",
+        "default": "./dist/rollup.mjs"
+      },
+      "require": {
+        "types": "./dist/rollup.d.ts",
+        "default": "./dist/rollup.js"
+      }
+    },
+    "./rolldown": {
+      "import": {
+        "types": "./dist/rolldown.d.mts",
+        "default": "./dist/rolldown.mjs"
+      },
+      "require": {
+        "types": "./dist/rolldown.d.ts",
+        "default": "./dist/rolldown.js"
+      }
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "unplugin": "^3.3.0"
+  },
+  "peerDependencies": {
+    "@rspack/core": ">=1",
+    "rolldown": ">=1.0.0-beta",
+    "rollup": "^3 || ^4",
+    "vite": ">=3",
+    "webpack": "^4 || ^5"
+  },
+  "peerDependenciesMeta": {
+    "@rspack/core": {
+      "optional": true
+    },
+    "rolldown": {
+      "optional": true
+    },
+    "rollup": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
-    "tsup": "^8.4.0",
     "rollup": "^3",
-    "typescript": "^4.9.5",
-    "vite": "^4",
+    "tsup": "^8.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.10",
     "webpack": "^5",
     "webpack-sources": "^3.2.3"
   },

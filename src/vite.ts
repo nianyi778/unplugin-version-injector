@@ -1,13 +1,4 @@
-import type { Plugin } from 'vite';
-import { createVersionInjector } from './core';
+import { createVitePlugin } from 'unplugin';
+import { unpluginFactory } from './index';
 
-export default function versionInjectorPlugin(options = {}): Plugin {
-  const inject = createVersionInjector(options);
-
-  return {
-    name: 'vite-version-injector',
-    transformIndexHtml(html) {
-      return inject(html);
-    },
-  };
-}
+export default createVitePlugin(unpluginFactory);
