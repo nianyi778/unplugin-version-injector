@@ -75,6 +75,18 @@ describe('createVersionInjector', () => {
     expect(result).toContain('Build Time: FIXED-TIME');
   });
 
+  it('supports formatDate string pattern', () => {
+    const inject = createVersionInjector({
+      version: '1.0.0',
+      name: 'app',
+      formatDate: 'YYYY-MM-DD',
+    });
+    const result = inject(HTML);
+
+    // Should contain a date in YYYY-MM-DD format
+    expect(result).toMatch(/Build Time: \d{4}-\d{2}-\d{2}/);
+  });
+
   it('escapes special characters in meta attributes and script', () => {
     const inject = createVersionInjector({ version: '1.0.0', name: '<bad>"name"</script>' });
     const result = inject(HTML);

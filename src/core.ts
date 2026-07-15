@@ -1,4 +1,4 @@
-import { getPackageVersion, defaultFormatDate, escapeHtml, toScriptString } from './shared/utils';
+import { getPackageVersion, defaultFormatDate, formatDate as formatDateUtil, escapeHtml, toScriptString } from './shared/utils';
 import { VersionInjectorOptions, RequestHeadersOptions } from './types';
 
 export const INJECTED_MARK = 'data-injected="unplugin-version-injector"';
@@ -59,7 +59,10 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
       : getPackageVersion();
   const version = options.version || pkg.version;
   const name = options.name || pkg.name;
-  const formatDate = options.formatDate ?? defaultFormatDate;
+  const formatDateOpt = options.formatDate;
+  const formatDate = typeof formatDateOpt === 'string'
+    ? (date: Date) => formatDateUtil(date, formatDateOpt)
+    : formatDateOpt ?? defaultFormatDate;
   const headersConfig = normalizeRequestHeaders(options.requestHeaders);
 
   // 构建时间每轮构建只算一次（适配器在 buildStart/compilation 时重置）：

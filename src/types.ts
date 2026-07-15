@@ -11,11 +11,13 @@ export interface RequestHeadersOptions {
   include?: (string | RegExp)[];
 }
 
+export type DateFormatter = (date: Date) => string;
+
 export interface VersionInjectorOptions {
   version?: string;  // 用户手动传递的版本号
   name?: string;     // 用户手动传递的包名
   log?: boolean; // 是否打印日志
-  formatDate?: (date: Date) => string; // 自定义 build time 格式化
+  formatDate?: string | DateFormatter; // 自定义 build time 格式化（支持字符串格式如 'YYYY-MM-DD HH:mm:ss'）
   /**
    * 给页面发出的 fetch / XMLHttpRequest 请求自动附加版本与构建时间请求头，
    * 便于在后端日志中定位客户端版本。默认关闭；true 使用默认配置（仅同源）。
