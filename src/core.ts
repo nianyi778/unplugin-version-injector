@@ -176,7 +176,7 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
 </script>`;
   };
 
-  return function processHtml(html: string): string {
+  const processHtml = function processHtml(html: string): string {
     // 每次注入时取当前时间，watch/dev 模式下 rebuild 不会显示过期时间
     const buildTime = formatDate(new Date());
 
@@ -197,4 +197,8 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
 
     return html;
   };
+
+  processHtml.resetBuildTime = () => { cachedBuildTime = null; };
+
+  return processHtml as HtmlInjector;
 }
