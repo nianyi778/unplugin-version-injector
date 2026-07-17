@@ -85,10 +85,34 @@ describe('requestHeaders option', () => {
     expect(inject(once)).toBe(once);
   });
 
-  it('rejects invalid header names', () => {
-    expect(() =>
-      createVersionInjector({ ...OPTIONS, requestHeaders: { versionHeaderName: 'bad name' } })
-    ).toThrow(/invalid request header name/);
+  it('falls back to the default header name on an invalid one (never throws)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const inject = createVersionInjector({
+      ...OPTIONS,
+      requestHeaders: { versionHeaderName: 'bad name' },
+    });
+    const result = inject(HTML);
+    // 不抛错、功能仍生效，且回退到默认头名
+    expect(result).toContain(HEADERS_INJECTED_MARK);
+    expect(result).toContain('X-Client-Version');
+    expect(result).not.toContain('bad name');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('returns original HTML unchanged when injection throws', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // formatDate 抛错 -> 注入应整体回退，返回原始 HTML
+    const inject = createVersionInjector({
+      ...OPTIONS,
+      requestHeaders: true,
+      formatDate: () => {
+        throw new Error('boom');
+      },
+    });
+    expect(inject(HTML)).toBe(HTML);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('adds headers to same-origin fetch calls', async () => {

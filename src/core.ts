@@ -7,6 +7,9 @@ export const HEADERS_INJECTED_MARK = 'data-injected="unplugin-version-injector-h
 // RFC 7230 token
 const HEADER_NAME_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
+const DEFAULT_VERSION_HEADER = 'X-Client-Version';
+const DEFAULT_BUILD_TIME_HEADER = 'X-Client-Build-Time';
+
 interface NormalizedRequestHeaders {
   versionHeaderName: string;
   buildTimeHeaderName: string;
@@ -18,14 +21,27 @@ function normalizeRequestHeaders(
 ): NormalizedRequestHeaders | null {
   if (!opt) return null;
   const o: RequestHeadersOptions = typeof opt === 'object' ? opt : {};
-  const versionHeaderName = o.versionHeaderName ?? 'X-Client-Version';
-  const buildTimeHeaderName = o.buildTimeHeaderName ?? 'X-Client-Build-Time';
-  for (const h of [versionHeaderName, buildTimeHeaderName]) {
-    if (!HEADER_NAME_RE.test(h)) {
-      throw new Error(`[VersionInjector] invalid request header name: "${h}"`);
-    }
-  }
-  return { versionHeaderName, buildTimeHeaderName, include: o.include ?? [] };
+
+  // 自动回退：非法 header 名不再抛错（会中断构建），改为告警并回退默认值
+  const pickHeaderName = (value: string | undefined, fallback: string): string => {
+    if (value == null) return fallback;
+    if (HEADER_NAME_RE.test(value)) return value;
+    console.warn(
+      `[VersionInjector] invalid request header name "${value}", falling back to "${fallback}"`
+    );
+    return fallback;
+  };
+
+  // include 只接受字符串 / 正则，其它类型忽略，避免注入脚本里出现非法字面量
+  const include = (Array.isArray(o.include) ? o.include : []).filter(
+    (p): p is string | RegExp => typeof p === 'string' || p instanceof RegExp
+  );
+
+  return {
+    versionHeaderName: pickHeaderName(o.versionHeaderName, DEFAULT_VERSION_HEADER),
+    buildTimeHeaderName: pickHeaderName(o.buildTimeHeaderName, DEFAULT_BUILD_TIME_HEADER),
+    include,
+  };
 }
 
 /** header 值只允许可见 ASCII，其他字符直接剔除，避免 setRequestHeader 抛错 */
@@ -79,11 +95,13 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
   const buildLogScript = (buildTime: string) => `
 <script ${INJECTED_MARK}>
   (function () {
-    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var bg = isDark ? '#ffffff' : '#1e1e1e';
-    var base = 'background: ' + bg + '; border-radius: 4px; padding: 4px; font-size: 12px;';
-    console.log('%c' + ${toScriptString(` ${name}@${version} `)}, base + ' color: #00c853;');
-    console.log('%c' + ${toScriptString(` Build Time: ${buildTime} `)}, base + ' color: #ffab00;');
+    try {
+      var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var bg = isDark ? '#ffffff' : '#1e1e1e';
+      var base = 'background: ' + bg + '; border-radius: 4px; padding: 4px; font-size: 12px;';
+      console.log('%c' + ${toScriptString(` ${name}@${version} `)}, base + ' color: #00c853;');
+      console.log('%c' + ${toScriptString(` Build Time: ${buildTime} `)}, base + ' color: #ffab00;');
+    } catch (e) {}
   })();
 </script>`;
 
@@ -94,6 +112,7 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
     return `
 <script ${HEADERS_INJECTED_MARK}>
   (function () {
+    try {
     if (window.__UVI_HEADERS_PATCHED__) return;
     window.__UVI_HEADERS_PATCHED__ = true;
     var VERSION_HEADER = ${toScriptString(cfg.versionHeaderName)};
@@ -172,30 +191,38 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
         };
       }
     }
+    } catch (e) {}
   })();
 </script>`;
   };
 
   const processHtml = function processHtml(html: string): string {
-    // 每次注入时取当前时间，watch/dev 模式下 rebuild 不会显示过期时间
-    const buildTime = formatDate(new Date());
+    // 自动回退：注入出任何意外都返回原始 HTML，绝不因注入失败而中断构建 / 破坏产物
+    const original = html;
+    try {
+      // 每次注入时取当前时间，watch/dev 模式下 rebuild 不会显示过期时间
+      const buildTime = formatDate(new Date());
 
-    if (!html.includes('<meta name="version"')) {
-      // <head> 可能带属性（如 <head lang="en">），replace 用函数避免特殊字符 $ 的坑
-      html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${metaTag}`);
+      if (!html.includes('<meta name="version"')) {
+        // <head> 可能带属性（如 <head lang="en">），replace 用函数避免特殊字符 $ 的坑
+        html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${metaTag}`);
+      }
+
+      if (headersConfig && !html.includes(HEADERS_INJECTED_MARK)) {
+        const headerScript = buildHeaderScript(buildTime, headersConfig);
+        html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${headerScript}\n`);
+      }
+
+      if (options.log !== false && !html.includes(INJECTED_MARK)) {
+        const logScript = buildLogScript(buildTime);
+        html = html.replace(/<\/body>/i, () => `  ${logScript}\n</body>`);
+      }
+
+      return html;
+    } catch (err) {
+      console.warn('[VersionInjector] injection failed, returning original HTML unchanged:', err);
+      return original;
     }
-
-    if (headersConfig && !html.includes(HEADERS_INJECTED_MARK)) {
-      const headerScript = buildHeaderScript(buildTime, headersConfig);
-      html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${headerScript}\n`);
-    }
-
-    if (options.log !== false && !html.includes(INJECTED_MARK)) {
-      const logScript = buildLogScript(buildTime);
-      html = html.replace(/<\/body>/i, () => `  ${logScript}\n</body>`);
-    }
-
-    return html;
   };
 
   processHtml.resetBuildTime = () => { cachedBuildTime = null; };
