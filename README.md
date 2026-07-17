@@ -17,6 +17,8 @@
 ✅ Supports Vite, Webpack 4/5, Rspack, Rollup, Rolldown  
 ✅ Fully compatible with Multi-Page Applications (MPA)  
 ✅ Customizable version, project name, date format, and theme-based console styling  
+✅ Date format supports dayjs-style patterns (`YYYY-MM-DD HH:mm:ss`) with zero extra dependencies  
+✅ Optional: attach a version header (`X-Client-Version`) to `fetch` / `XMLHttpRequest` requests to identify clients in backend logs  
 
 ---
 
@@ -125,47 +127,148 @@ In your final HTML output:
 | `version`        | `string`                          | Custom version number                                  | Read from package.json |
 | `name`           | `string`                          | Custom project name                                    | Read from package.json |
 | `log`            | `boolean`                         | Whether to inject the console log script               | `true`                 |
-| `formatDate`     | `(date: Date) => string`          | Custom build time formatter                            | ISO 8601 format        |
+| `formatDate`     | `string \| ((date: Date) => string)` | Custom build time format: a dayjs-style pattern (e.g. `'YYYY-MM-DD HH:mm:ss'`) or a function | ISO 8601 format        |
 | `requestHeaders` | `boolean \| RequestHeadersOptions` | Attach version/build-time headers to outgoing requests | `false`                |
 
 > `version` and `name` can be provided independently — whichever is missing falls back to the nearest `package.json`.
 
 ---
 
-## 📡 Request Headers (identify clients in backend logs)
+## 📅 Formatting build time (`formatDate`)
 
-Enable `requestHeaders` to patch `window.fetch` and `XMLHttpRequest` so every API request carries the client version — making it trivial to tell which client build produced a request in backend/API logs:
+`formatDate` accepts two forms, and applies to both the **console banner** and the **`X-Client-Build-Time` header**:
 
 ```ts
-versionInjector({
-  requestHeaders: true, // same-origin requests only
-});
+// 1) dayjs-style pattern (built-in lightweight impl, no dayjs needed)
+versionInjector({ formatDate: 'YYYY-MM-DD HH:mm:ss' }); // 2024-04-01 12:30:45
+
+// 2) custom function
+versionInjector({ formatDate: (date) => date.getTime().toString() }); // timestamp
 ```
 
-Every same-origin request then includes:
+Supported tokens: `YYYY YY MMMM MMM MM M DD D dddd ddd dd d HH H hh h mm m ss s SSS SS S A a`.
+
+---
+
+## 📡 Request Headers (identify clients in backend logs)
+
+Enable `requestHeaders` to patch `window.fetch` and `XMLHttpRequest` so requests carry the client version and build time — making it trivial to tell which client build produced a request in backend/API logs. Two headers are injected by default:
 
 ```
 X-Client-Version: my-app/1.2.3
-X-Client-Build-Time: 2024-04-01T12:00:00.000Z
+X-Client-Build-Time: 2024-04-01 12:00:00
 ```
 
-Full configuration:
+> Because it patches `fetch` / `XMLHttpRequest`, **axios and most HTTP clients work automatically**. `navigator.sendBeacon` and WebSocket connections cannot carry custom headers and are not covered.
+
+### `RequestHeadersOptions`
+
+| Option | Type | Description | Default |
+|---|---|---|---|
+| `versionHeaderName` | `string` | Version header name; value is `${name}/${version}` | `'X-Client-Version'` |
+| `buildTimeHeaderName` | `string` | Build-time header name; value is the `formatDate` output | `'X-Client-Build-Time'` |
+| `include` | `(string \| RegExp)[]` | Extra **cross-origin** allowlist: string = URL prefix, RegExp = full-URL test. **Same-origin requests are always injected** | `[]` |
+
+### Scenario 1: same-origin (simplest)
+
+Page and API share an origin, or you use a dev-server proxy (requests hit `/api`, which the browser treats as same-origin):
+
+```ts
+versionInjector({ requestHeaders: true }); // true = defaults, same-origin only
+```
+
+### Scenario 2: custom header names
 
 ```ts
 versionInjector({
   requestHeaders: {
-    versionHeaderName: 'X-Client-Version',      // default
-    buildTimeHeaderName: 'X-Client-Build-Time', // default
-    // Cross-origin URLs to include (string = URL prefix, RegExp = full URL test).
-    // Same-origin requests are always included.
-    include: ['https://api.example.com/', /\.internal\.example\.com/],
+    versionHeaderName: 'X-App-Version',
+    buildTimeHeaderName: 'X-App-Build',
   },
 });
 ```
 
-> ⚠️ **CORS**: custom headers on cross-origin requests trigger a preflight — the server must allow them via `Access-Control-Allow-Headers`. That's why cross-origin injection is opt-in through `include`.
->
-> Note: `navigator.sendBeacon` and WebSocket connections cannot carry custom headers; the patch covers `fetch` and `XMLHttpRequest` (which includes axios and most HTTP clients).
+### Scenario 3: a single cross-origin API (most common in prod)
+
+Front end and API are on different origins — add the API origin to `include` (string = URL prefix):
+
+```ts
+versionInjector({
+  requestHeaders: { include: ['https://api.example.com'] },
+});
+```
+
+### Scenario 4: multiple cross-origin APIs / RegExp
+
+```ts
+versionInjector({
+  requestHeaders: {
+    include: [
+      'https://api.example.com',
+      'https://auth.example.com',
+      /^https:\/\/[^/]*\.example\.com\//, // any *.example.com subdomain
+    ],
+  },
+});
+```
+
+### Scenario 5: Monorepo + all cross-origin (the trickiest) ⭐
+
+Many packages share one build config, and each app talks to cross-origin APIs that differ per environment (dev / sandbox / prod). Two keys:
+
+**1. Write `include` once in the shared root config** — every package inherits it (put the plugin in the shared `configureWebpack` / `vite` config).
+
+**2. Don't hardcode origins — build them from env vars.** Each app's `.env.*` usually already defines its API origins:
+
+```js
+// shared root build config (webpack example)
+const versionInjector = require('unplugin-version-injector/webpack');
+
+// provided by each app / each environment's .env
+const apiOrigins = [
+  process.env.VUE_APP_API_ORIGIN,
+  process.env.VUE_APP_SDK_API_ORIGIN,
+  process.env.VUE_APP_USER_API_ORIGIN,
+].filter(Boolean);
+
+module.exports = {
+  configureWebpack: {
+    plugins: [
+      versionInjector({ requestHeaders: { include: apiOrigins } }),
+    ],
+  },
+};
+```
+
+dev / sandbox / prod each get the right origins automatically — no giant hardcoded list.
+
+If all APIs live under a few fixed base domains, a single RegExp also works (new subdomains match automatically):
+
+```ts
+versionInjector({
+  requestHeaders: {
+    include: [/^https:\/\/[^/]*\.(example\.io|example\.dev|sandbox-example\.com)\//],
+  },
+});
+```
+
+> Only include API origins you actually `fetch`/`XHR` **and** whose CORS you control. Don't add CDNs or third-party SDK script hosts — that only triggers preflights and can break asset loading.
+
+### ⚠️ Cross-origin requires backend cooperation (CORS preflight)
+
+Custom headers on cross-origin requests trigger an `OPTIONS` preflight. **Every** API service matched by `include` must allow the two headers, or the browser blocks the request:
+
+```
+Access-Control-Allow-Headers: X-Client-Version, X-Client-Build-Time
+```
+
+This is exactly why cross-origin injection is opt-in via `include` rather than on by default.
+
+### 🔍 Same-origin or cross-origin?
+
+Open the browser Network tab and look at the request's **real URL**:
+- `http://localhost:9040/api/...` (via dev proxy) → **same-origin**, `requestHeaders: true` is enough, no `include`.
+- `https://api.xxx.com/...` (direct) → **cross-origin**, must be in `include` + backend must allow the headers.
 
 ---
 

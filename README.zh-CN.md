@@ -16,6 +16,8 @@
 ✅ 完美兼容多页面应用（MPA）  
 ✅ 支持自定义版本号、项目名、时间格式，默认读取 `package.json`  
 ✅ 控制台输出支持自动适配深/浅主题配色  
+✅ 时间格式支持 dayjs 风格字符串（`YYYY-MM-DD HH:mm:ss`），零额外依赖  
+✅ 可选：给 `fetch` / `XMLHttpRequest` 请求自动注入版本请求头（`X-Client-Version`），在后端日志中定位客户端版本  
 
 ---
 
@@ -131,46 +133,148 @@ export default {
 | `version`    | `string`  | 自定义版本号                     | 自动读取 package.json |
 | `name`       | `string`  | 自定义项目名                     | 自动读取 package.json |
 | `log`        | `boolean` | 是否输出控制台日志               | `true`              |
-| `formatDate` | `(date: Date) => string` | 自定义时间格式函数         | ISO 格式            |
+| `formatDate` | `string \| ((date: Date) => string)` | 自定义构建时间格式：支持 dayjs 风格字符串（如 `'YYYY-MM-DD HH:mm:ss'`）或函数 | ISO 格式 |
 | `requestHeaders` | `boolean \| RequestHeadersOptions` | 给发出的请求自动附加版本/构建时间请求头 | `false`  |
 
 > `version` 和 `name` 可以单独传入，缺失的一项会自动从最近的 `package.json` 读取。
 
 ---
 
-## **📡 请求头注入（后端日志定位客户端版本）**
+## **📅 构建时间格式化 `formatDate`**
 
-开启 `requestHeaders` 后，插件会在页面最前面 patch `window.fetch` 和 `XMLHttpRequest`，让所有 API 请求自动带上版本信息——排查前后端请求日志时可以直接看出是哪个客户端、哪个版本发出的请求：
+`formatDate` 支持两种写法，同时作用于**控制台构建时间**和 **`X-Client-Build-Time` 请求头**：
 
 ```ts
-versionInjector({
-  requestHeaders: true, // 默认仅同源请求
-});
+// 1) dayjs 风格字符串（内置轻量实现，无需安装 dayjs）
+versionInjector({ formatDate: 'YYYY-MM-DD HH:mm:ss' }); // 2024-04-01 12:30:45
+
+// 2) 自定义函数
+versionInjector({ formatDate: (date) => date.getTime().toString() }); // 时间戳
 ```
 
-之后每个同源请求都会带上：
+支持的 token：`YYYY YY MMMM MMM MM M DD D dddd ddd dd d HH H hh h mm m ss s SSS SS S A a`。
+
+---
+
+## **📡 请求头注入（在后端日志中定位客户端版本）**
+
+开启 `requestHeaders` 后，插件会在页面最前面 patch `window.fetch` 和 `XMLHttpRequest`，让请求自动带上版本与构建时间——排查前后端日志时，一眼就能看出是哪个客户端、哪个版本发出的请求。默认注入两个头：
 
 ```
 X-Client-Version: my-app/1.2.3
-X-Client-Build-Time: 2024-04-01T12:00:00.000Z
+X-Client-Build-Time: 2024-04-01 12:00:00
 ```
 
-完整配置：
+> 底层是 patch `fetch` / `XMLHttpRequest`，所以 **axios、umi-request 等主流库都自动生效**；`navigator.sendBeacon` 和 WebSocket 无法携带自定义头，不在覆盖范围。
+
+### 子配置 `RequestHeadersOptions`
+
+| 选项 | 类型 | 说明 | 默认值 |
+|---|---|---|---|
+| `versionHeaderName` | `string` | 版本头名称，值为 `${name}/${version}` | `'X-Client-Version'` |
+| `buildTimeHeaderName` | `string` | 构建时间头名称，值为 `formatDate` 的输出 | `'X-Client-Build-Time'` |
+| `include` | `(string \| RegExp)[]` | 额外注入的**跨域**地址白名单：字符串按 URL 前缀匹配，正则按完整 URL 测试。**同源请求始终注入** | `[]` |
+
+### 场景 1：同源请求（最简单）
+
+页面与 API 同域，或本地走 dev-server 代理（请求发到 `/api`，浏览器视角是同源）：
+
+```ts
+versionInjector({ requestHeaders: true }); // true = 默认配置，仅同源
+```
+
+### 场景 2：自定义请求头名称
 
 ```ts
 versionInjector({
   requestHeaders: {
-    versionHeaderName: 'X-Client-Version',      // 默认值
-    buildTimeHeaderName: 'X-Client-Build-Time', // 默认值
-    // 跨域白名单：字符串按 URL 前缀匹配，正则按完整 URL 测试；同源请求始终注入
-    include: ['https://api.example.com/', /\.internal\.example\.com/],
+    versionHeaderName: 'X-App-Version',
+    buildTimeHeaderName: 'X-App-Build',
   },
 });
 ```
 
-> ⚠️ **CORS 注意**：给跨域请求加自定义头会触发预检（preflight），服务端必须在 `Access-Control-Allow-Headers` 中放行这两个头，否则请求会失败——所以跨域注入设计为通过 `include` 显式开启。
->
-> 说明：`navigator.sendBeacon` 和 WebSocket 无法携带自定义请求头；补丁覆盖 `fetch` 与 `XMLHttpRequest`（axios 等主流 HTTP 客户端底层都走这两条路）。
+### 场景 3：单个跨域 API（生产最常见）
+
+前端和 API 不同源，把 API 域名加进 `include`（字符串 = URL 前缀）：
+
+```ts
+versionInjector({
+  requestHeaders: { include: ['https://api.example.com'] },
+});
+```
+
+### 场景 4：多个跨域 API / 正则批量匹配
+
+```ts
+versionInjector({
+  requestHeaders: {
+    include: [
+      'https://api.example.com',
+      'https://auth.example.com',
+      /^https:\/\/[^/]*\.example\.com\//, // 匹配 *.example.com 所有子域
+    ],
+  },
+});
+```
+
+### 场景 5：Monorepo + 全跨域（最容易踩坑）⭐
+
+多包共用一份构建配置、每个子应用又连不同环境（dev / sandbox / prod）的跨域 API——这是最难配的场景。两个关键点：
+
+**① `include` 只需在共享的根配置里写一次**，所有子包继承即可（把插件放进共享的 `configureWebpack` / `vite` 配置）。
+
+**② 域名随环境变化，别硬编码——用环境变量动态拼**。每个子应用的 `.env.*` 里通常已有 API 域名变量，直接读：
+
+```js
+// 共享的根构建配置（以 webpack 为例）
+const versionInjector = require('unplugin-version-injector/webpack');
+
+// 这些变量由各子应用 / 各环境的 .env 提供
+const apiOrigins = [
+  process.env.VUE_APP_API_ORIGIN,
+  process.env.VUE_APP_SDK_API_ORIGIN,
+  process.env.VUE_APP_USER_API_ORIGIN,
+].filter(Boolean); // 去掉未定义的
+
+module.exports = {
+  configureWebpack: {
+    plugins: [
+      versionInjector({ requestHeaders: { include: apiOrigins } }),
+    ],
+  },
+};
+```
+
+这样 dev / sandbox / prod 各自带对应域名，不用维护一份大清单。
+
+若所有 API 都在固定的几个主域名下，也可以直接用一条正则（新增子域自动命中）：
+
+```ts
+versionInjector({
+  requestHeaders: {
+    include: [/^https:\/\/[^/]*\.(example\.io|example\.dev|sandbox-example\.com)\//],
+  },
+});
+```
+
+> 只把**你自己发 fetch/XHR、且能改 CORS 的 API 域名**放进去。CDN、第三方 SDK 脚本域（你控制不了 CORS）不要加，否则只会触发预检导致资源加载失败。
+
+### ⚠️ 跨域必读：后端要放行（CORS 预检）
+
+给跨域请求加自定义头，浏览器会先发一个 `OPTIONS` 预检。`include` 命中的**每一个** API 服务都必须在响应里放行这两个头，否则请求会被浏览器拦掉：
+
+```
+Access-Control-Allow-Headers: X-Client-Version, X-Client-Build-Time
+```
+
+多后端场景要逐个确认。这也是跨域注入必须通过 `include` 显式开启、而非默认全开的原因。
+
+### 🔍 怎么判断请求是同源还是跨域？
+
+打开浏览器 Network，看请求的**真实 URL**：
+- `http://localhost:9040/api/...`（走 dev 代理）→ **同源**，`requestHeaders: true` 就够，不用 `include`；
+- `https://api.xxx.com/...`（直连）→ **跨域**，必须加进 `include` + 后端放行。
 
 ---
 
