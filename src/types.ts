@@ -23,4 +23,9 @@ export interface VersionInjectorOptions {
    * 便于在后端日志中定位客户端版本。默认关闭；true 使用默认配置（仅同源）。
    */
   requestHeaders?: boolean | RequestHeadersOptions;
+  /**
+   * 给注入的内联 <script> 加上 CSP nonce（渲染为 `nonce="..."`）。
+   * 站点使用严格 CSP（script-src 带 nonce）时需设置，否则注入脚本会被 CSP 拦截。
+   */
+  nonce?: string;
 }

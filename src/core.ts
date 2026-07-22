@@ -89,11 +89,14 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
     return cachedBuildTime;
   };
 
+  // CSP：站点若用了 script-src nonce，注入的内联脚本需带同样的 nonce 才不会被拦截
+  const nonceAttr = options.nonce ? ` nonce="${escapeHtml(options.nonce)}"` : '';
+
   const metaTag = `<meta name="version" content="${escapeHtml(version)}">\n<meta name="project" content="${escapeHtml(name)}">\n`;
 
   // 注入的脚本保持纯 ES5，兼容老浏览器
   const buildLogScript = (buildTime: string) => `
-<script ${INJECTED_MARK}>
+<script${nonceAttr} ${INJECTED_MARK}>
   (function () {
     try {
       var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -110,7 +113,7 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
     const versionValue = sanitizeHeaderValue(`${name}/${version}`);
     const buildValue = sanitizeHeaderValue(buildTime);
     return `
-<script ${HEADERS_INJECTED_MARK}>
+<script${nonceAttr} ${HEADERS_INJECTED_MARK}>
   (function () {
     try {
     if (window.__UVI_HEADERS_PATCHED__) return;
@@ -136,13 +139,21 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
       }
     }
 
+    function matchesPrefix(href, p) {
+      if (href.indexOf(p) !== 0) return false;
+      // 前缀本身以 / 结尾，或前缀后紧跟边界字符，避免 'https://api.x.com' 命中 'https://api.x.com.evil.com'
+      if (p.charAt(p.length - 1) === '/') return true;
+      var next = href.charAt(p.length);
+      return next === '' || next === '/' || next === '?' || next === '#';
+    }
+
     function shouldInject(url) {
       var u = resolveUrl(url == null ? '' : String(url));
       if (!u || (u.protocol !== 'http:' && u.protocol !== 'https:')) return false;
       if (u.protocol === location.protocol && u.host === location.host) return true;
       for (var i = 0; i < INCLUDE.length; i++) {
         var p = INCLUDE[i];
-        if (typeof p === 'string' ? u.href.indexOf(p) === 0 : p.test(u.href)) return true;
+        if (typeof p === 'string' ? matchesPrefix(u.href, p) : p.test(u.href)) return true;
       }
       return false;
     }
@@ -200,17 +211,17 @@ export function createVersionInjector(options: VersionInjectorOptions = {}): Htm
     // 自动回退：注入出任何意外都返回原始 HTML，绝不因注入失败而中断构建 / 破坏产物
     const original = html;
     try {
-      // 每次注入时取当前时间，watch/dev 模式下 rebuild 不会显示过期时间
-      const buildTime = formatDate(new Date());
+      // 构建时间每轮构建只算一次（buildStart 钩子会重置）：MPA 多页时间戳一致，watch 重建刷新
+      const buildTime = getBuildTime();
 
       if (!html.includes('<meta name="version"')) {
         // <head> 可能带属性（如 <head lang="en">），replace 用函数避免特殊字符 $ 的坑
-        html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${metaTag}`);
+        html = html.replace(HEAD_OPEN_RE, (match) => `${match}\n  ${metaTag}`);
       }
 
       if (headersConfig && !html.includes(HEADERS_INJECTED_MARK)) {
         const headerScript = buildHeaderScript(buildTime, headersConfig);
-        html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  ${headerScript}\n`);
+        html = html.replace(HEAD_OPEN_RE, (match) => `${match}\n  ${headerScript}\n`);
       }
 
       if (options.log !== false && !html.includes(INJECTED_MARK)) {

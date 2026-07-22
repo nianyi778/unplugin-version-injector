@@ -67,6 +67,10 @@ export const unpluginFactory: UnpluginFactory<VersionInjectorOptions | undefined
 
   return {
     name: PLUGIN_NAME,
+    // 每轮（重）构建开始时重置构建时间缓存：watch 重建刷新时间，同一次构建里 MPA 各页保持一致
+    buildStart() {
+      inject.resetBuildTime();
+    },
     vite: {
       transformIndexHtml(html: string) {
         return inject(html);

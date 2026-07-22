@@ -129,6 +129,7 @@ In your final HTML output:
 | `log`            | `boolean`                         | Whether to inject the console log script               | `true`                 |
 | `formatDate`     | `string \| ((date: Date) => string)` | Custom build time format: a dayjs-style pattern (e.g. `'YYYY-MM-DD HH:mm:ss'`) or a function | ISO 8601 format        |
 | `requestHeaders` | `boolean \| RequestHeadersOptions` | Attach version/build-time headers to outgoing requests | `false`                |
+| `nonce`          | `string`                          | CSP nonce added to the injected inline `<script>` tags | —                      |
 
 > `version` and `name` can be provided independently — whichever is missing falls back to the nearest `package.json`.
 

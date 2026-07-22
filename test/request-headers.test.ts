@@ -153,6 +153,26 @@ describe('requestHeaders option', () => {
     expect(sandbox.fetchCalls[0].init).toBeUndefined();
   });
 
+  it('string include matches on an origin boundary, not prefix-extended domains', async () => {
+    const inject = createVersionInjector({
+      ...OPTIONS,
+      requestHeaders: { include: ['https://api.example.com'] },
+    });
+    const sandbox = createSandbox();
+    runHeaderScript(inject(HTML), sandbox);
+
+    await sandbox.window.fetch('https://api.example.com/x'); // 命中
+    await sandbox.window.fetch('https://api.example.com.evil.com/x'); // 不该命中
+
+    expect(sandbox.fetchCalls[0].init.headers.get('X-Client-Version')).toBe('my-app/1.2.3');
+    expect(sandbox.fetchCalls[1].init).toBeUndefined();
+  });
+
+  it('adds the CSP nonce to the header patch script', () => {
+    const inject = createVersionInjector({ ...OPTIONS, requestHeaders: true, nonce: 'xyz' });
+    expect(inject(HTML)).toContain('<script nonce="xyz"');
+  });
+
   it('include patterns opt cross-origin urls in (string prefix and RegExp)', async () => {
     const inject = createVersionInjector({
       ...OPTIONS,

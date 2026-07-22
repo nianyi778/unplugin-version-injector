@@ -135,6 +135,7 @@ export default {
 | `log`        | `boolean` | 是否输出控制台日志               | `true`              |
 | `formatDate` | `string \| ((date: Date) => string)` | 自定义构建时间格式：支持 dayjs 风格字符串（如 `'YYYY-MM-DD HH:mm:ss'`）或函数 | ISO 格式 |
 | `requestHeaders` | `boolean \| RequestHeadersOptions` | 给发出的请求自动附加版本/构建时间请求头 | `false`  |
+| `nonce`      | `string`  | 给注入的内联 `<script>` 加 CSP nonce（严格 CSP 站点需设置） | —  |
 
 > `version` 和 `name` 可以单独传入，缺失的一项会自动从最近的 `package.json` 读取。
 

@@ -105,4 +105,27 @@ describe('createVersionInjector', () => {
     expect(script).not.toContain('`');
     expect(script).not.toContain('=>');
   });
+
+  it('caches build time within a build and refreshes after resetBuildTime', () => {
+    let n = 0;
+    const inject = createVersionInjector({ version: '1.0.0', name: 'app', formatDate: () => 'T' + n++ });
+    const first = inject(HTML);
+    const second = inject(HTML); // 同一次构建：命中缓存，仍是 T0
+    expect(first).toContain('Build Time: T0');
+    expect(second).toContain('Build Time: T0');
+    inject.resetBuildTime();
+    expect(inject(HTML)).toContain('Build Time: T1'); // 重置后刷新
+  });
+
+  it('does not inject into a <header> element when there is no <head>', () => {
+    const inject = createVersionInjector({ version: '1.0.0', name: 'app' });
+    const out = inject('<html><body><header>hi</header></body></html>');
+    expect(out).not.toContain('<meta name="version"');
+    expect(out).toContain('<header>hi</header>');
+  });
+
+  it('adds the CSP nonce to the injected script', () => {
+    const inject = createVersionInjector({ version: '1.0.0', name: 'app', nonce: 'abc123' });
+    expect(inject(HTML)).toContain('<script nonce="abc123"');
+  });
 });

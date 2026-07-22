@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-07-22
+
+### Added
+
+- **`nonce` option** — adds a CSP nonce to the injected inline `<script>` tags
+  (rendered as `nonce="..."`), so injection keeps working on sites with a strict
+  `script-src` Content-Security-Policy.
+
+### Fixed
+
+- **Build time is now computed once per build** and shared across all HTML assets, so
+  multi-page (MPA) builds get a consistent timestamp; it refreshes on each watch rebuild
+  via the `buildStart` hook. (The previous caching mechanism was effectively dead code.)
+- **`<head>` matching no longer matches `<header>`** — a whitespace-boundary regex is used,
+  so nothing is injected into a `<header>` element when no `<head>` exists.
+- **String `include` entries now match on an origin/path boundary** — e.g.
+  `'https://api.example.com'` no longer matches `https://api.example.com.evil.com`,
+  preventing the version header from leaking to look-alike domains.
+
 ## [2.2.1] - 2026-07-17
 
 ### Changed
@@ -70,7 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/rolldown`). The package root no longer exposes bundler methods directly.
 - Flat `dist/` output with ESM + CJS builds and a full `exports` map.
 
-[Unreleased]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.2.1...HEAD
+[Unreleased]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.2.1...v2.3.0
 [2.2.1]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.1.0...v2.1.1
