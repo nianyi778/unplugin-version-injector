@@ -1,4 +1,5 @@
 import { createRequire } from 'module';
+import { join } from 'path';
 import { createUnplugin } from 'unplugin';
 import type { UnpluginFactory, UnpluginInstance } from 'unplugin';
 import { createVersionInjector } from './core';
@@ -44,9 +45,12 @@ function applyWebpackLike(compiler: any, inject: InjectFn): void {
       );
     });
   } else {
-    // webpack 4 fallback with `webpack-sources`（CJS 直接用 require，ESM 走 createRequire）
+    // webpack 4 fallback：用 webpack-sources 的 RawSource。
+    // CJS 直接用 require；ESM 基于 webpack 项目根构造 require（不用 import.meta.url，避免 es2015 target 告警）
     const requireFn =
-      typeof require === 'function' ? require : createRequire(import.meta.url);
+      typeof require === 'function'
+        ? require
+        : createRequire(join(compiler.context || process.cwd(), 'noop.js'));
     const { RawSource } = requireFn('webpack-sources');
     compiler.hooks.emit.tapAsync(PLUGIN_NAME, (compilation: any, callback: () => void) => {
       for (const name of Object.keys(compilation.assets)) {

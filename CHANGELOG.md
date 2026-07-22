@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-07-22
+
+### Fixed
+
+- Removed the `import.meta.url` reference from the webpack 4 fallback path, so bundling
+  no longer emits an `empty-import-meta` warning under an es2015 target. `webpack-sources`
+  is now resolved from the webpack project root. No runtime behavior change.
+
 ## [2.3.0] - 2026-07-22
 
 ### Added
@@ -89,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/rolldown`). The package root no longer exposes bundler methods directly.
 - Flat `dist/` output with ESM + CJS builds and a full `exports` map.
 
-[Unreleased]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.2.1...v2.3.0
 [2.2.1]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/nianyi778/unplugin-version-injector/compare/v2.1.1...v2.2.0
